@@ -1,0 +1,154 @@
+<style>
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: green;
+      display: inline-block;
+      border: solid 1px white;
+      vertical-align: middle;
+  
+      line-height: 100px;
+      font-size: 50px;
+      text-align: center;
+    }
+  </style>
+
+  <div id="board"></div>
+
+  <script>
+      let pattern = [0, 0, 0,
+                     0, 0, 0,
+                     0, 0, 0];
+      
+      let current = 2;
+      function show() {
+          let board = document.getElementById("board");
+          for (let row = 0; row < 3; row++) {
+              for (let col = 0; col < 3; col++) {
+                  let cell = document.createElement("div");
+                  cell.classList.add("cell");
+                  cell.addEventListener("click", () => userMove(row, col));
+                  let patternValue = pattern[getCellIndex(row, col)];
+                  cell.innerText = getCellText(patternValue);
+                  board.append(cell);
+              }
+              board.append(document.createElement("br"));
+          }
+      }
+
+      function userMove(row, col) {
+        // if the cell has been clicked, just return so that there will be no effect for this click
+        if (pattern[getCellIndex(row, col)] != 0) {
+            return;
+        } 
+        pattern[getCellIndex(row, col)] = current;
+        setCellText(row, col, getCellText(current));
+        if (check(pattern, row, col)) {
+            alert(getCellText(current) + " is the winner");
+        }
+        current = 3 - current;
+        computerMove();
+      }
+
+      function computerMove() {
+        let choice = bestChoice(pattern, current);
+        if (choice.result === 1) {
+            alert(getCellText(current) + " is the winner");
+        }
+        pattern[getCellIndex(choice.position[0], choice.position[1])] = current;
+        setCellText(choice.position[0], choice.position[1], getCellText(current));
+        current = 3 - current;
+      }
+
+      function willWin(pattern, value) {
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                if (pattern[getCellIndex(row, col)]) continue;
+                let patternNew = pattern.slice();
+                patternNew[getCellIndex(row, col)] = value;
+                if (check(patternNew, row, col)) {
+                    return [row, col];
+                }
+            }
+        }
+        return null;
+      }
+
+      function bestChoice(pattern, value) {
+          let position = willWin(pattern, value);
+          if (position) {
+              return {
+                position: position,
+                result: 1
+              };
+          }
+          let result = -2;
+          for (let row = 0; row < 3; row++) {
+              for (let col = 0; col < 3; col++) {
+                  if (pattern[getCellIndex(row, col)]) continue;
+                  let patternNew = pattern.slice();
+                  patternNew[getCellIndex(row, col)] = value;
+                  let oopResult = bestChoice(patternNew, 3 - value).result;
+                  if (-oopResult > result) {
+                      result = -oopResult;
+                      position = [row, col];
+                  }
+                  if (result === 1) {
+                      break;
+                  }
+              }
+              if (result === 1) {
+                  break;
+              }
+          }
+
+          return {
+              position: position,
+              result: position ? result : 0
+          };
+      }
+
+      function check(pattern, row, col) {
+          let win = false;
+          // check the row
+          win |= samePattern(pattern[getCellIndex(row, 0)], pattern[getCellIndex(row, 1)], pattern[getCellIndex(row, 2)]);
+          // check the col
+          win |= samePattern(pattern[getCellIndex(0, col)], pattern[getCellIndex(1, col)], pattern[getCellIndex(2, col)]);
+          // check the left diagonal
+          if (row === col) {
+              win |= samePattern(pattern[getCellIndex(0, 0)], pattern[getCellIndex(1, 1)], pattern[getCellIndex(2, 2)]);
+          }
+          // check the right diagonal
+          if (row + col === 2) {
+              win |= samePattern(pattern[getCellIndex(2, 0)], pattern[getCellIndex(1, 1)], pattern[getCellIndex(0, 2)]);
+          }
+          return win;
+      }
+
+      function samePattern(...patternValues) {
+          if (patternValues.length <= 0) {
+              return true;
+          }
+          let first = patternValues[0]
+          for (value of patternValues) {
+              if (value !== first) {
+                  return false;
+              }
+          }
+          return true;
+      }
+
+      function getCellText(value) {
+          return value == 2 ? "❌": value == 1 ? "⭕️" : "";
+      }
+
+      function setCellText(row, col, text) {
+        document.getElementsByClassName("cell")[getCellIndex(row, col)].innerText = text;
+      }
+
+      function getCellIndex(row, col) {
+          return row * 3 + col;
+      }
+
+      show();
+  </script>
